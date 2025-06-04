@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Guardian - Digital Awakening Health Check</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ffd1; /* Original AI Guardian Accent */
+            --accent-color-darker: #00cca3;
+            --border-color: #333333;
+            --shadow-color: rgba(0, 255, 209, 0.1);
+            --shadow-color-dark: rgba(0, 0, 0, 0.3);
+            --warn-color: #ffd700;
+            --error-color: #ff4d4d;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+        }
+        .page-main-header {
+            background-color: var(--card-bg-color);
+            color: var(--accent-color);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .page-main-header .back-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .page-main-header .back-button:hover {
+            background-color: rgba(0, 255, 209, 0.1);
+        }
+        .page-main-header h1 {
+            margin: 0 auto;
+            font-size: 1.8em;
+        }
+        .main-content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .content-section {
+            background-color: var(--card-bg-color);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px var(--shadow-color-dark), 0 0 5px var(--shadow-color);
+        }
+        .content-section h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.7em;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 0.95em;
+        }
+        .btn:hover {
+            background-color: var(--accent-color-darker);
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            background-color: #555;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .health-check-intro {
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        .health-check-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .health-check-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 20px;
+        }
+        .health-check-section h3 {
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+        .section-note {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        .question-item {
+            margin-bottom: 20px;
+        }
+        .question-item p {
+            margin-bottom: 10px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        .question-item .options {
+            display: flex;
+            gap: 20px;
+            padding-left: 10px;
+        }
+        .question-item .options label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        .question-item .options input[type="radio"] {
+            margin-right: 8px;
+            accent-color: var(--accent-color);
+            transform: scale(1.2);
+            width: auto;
+            margin-bottom: 0;
+        }
+        #calculateScoreBtn {
+            margin-top: 25px;
+            width: 100%;
+        }
+        /* Results display is removed from this page, will be on view-score.html */
+    </style>
+</head>
+<body>
+    <header class="page-main-header">
+        <a href="index.html" class="back-button" title="Back to Dashboard">←</a> <!-- Left arrow character -->
+        <h1>Digital Awakening</h1>
+    </header>
+
+    <div class="main-content-wrapper">
+        <section id="healthCheckSectionStart" class="content-section">
+            <h2>Health Check</h2>
+            <p class="health-check-intro">Please answer the following questions honestly based on your current business practices. This check will help you understand your business's current digital health and identify areas for improvement.</p>
+
+            <form id="healthCheckForm">
+                <!-- Section 1: Basic Cybersecurity Hygiene -->
+                <div class="health-check-section" data-section-id="1" data-max-score="36">
+                    <h3>Section 1: Basic Cybersecurity Hygiene (36 Points)</h3>
+                    <!-- Questions q1 to q9 -->
+                    <div class="question-item"><p>1. Do all employees use strong, unique passwords for their work accounts, and do you encourage the use of a password manager?</p><div class="options"><label><input type="radio" name="q1" value="4" required> Yes</label><label><input type="radio" name="q1" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>2. Is Multi-Factor Authentication (MFA or 2FA) enabled on critical accounts (e.g., email, banking, cloud storage)?</p><div class="options"><label><input type="radio" name="q2" value="4" required> Yes</label><label><input type="radio" name="q2" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>3. Are operating systems (Windows, MacOS, etc.) and essential software (web browsers, office suites) regularly updated to the latest versions on all company devices?</p><div class="options"><label><input type="radio" name="q3" value="4" required> Yes</label><label><input type="radio" name="q3" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>4. Do you regularly back up important business data (e.g., customer files, financial records), and have you recently tested if these backups can be successfully restored?</p><div class="options"><label><input type="radio" name="q4" value="4" required> Yes</label><label><input type="radio" name="q4" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>5. Is your primary business Wi-Fi network secured with a strong password (e.g., WPA2/3) and is it separate from any guest Wi-Fi network you might offer?</p><div class="options"><label><input type="radio" name="q5" value="4" required> Yes</label><label><input type="radio" name="q5" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>6. Are your employees aware of phishing risks, and do you have measures in place (e.g., spam filters, employee training) to mitigate email-based threats?</p><div class="options"><label><input type="radio" name="q6" value="4" required> Yes</label><label><input type="radio" name="q6" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>7. Is reputable antivirus or anti-malware software installed and kept up-to-date on all computers and servers used for business?</p><div class="options"><label><input type="radio" name="q7" value="4" required> Yes</label><label><input type="radio" name="q7" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>8. Have your employees received any basic cybersecurity awareness training or guidelines in the last 12 months?</p><div class="options"><label><input type="radio" name="q8" value="4" required> Yes</label><label><input type="radio" name="q8" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>9. Do you have clear procedures for what to do if a company device (laptop, phone) is lost or stolen (e.g., remote wipe capability, reporting procedure)?</p><div class="options"><label><input type="radio" name="q9" value="4" required> Yes</label><label><input type="radio" name="q9" value="0"> No/Don't Know</label></div></div>
+                </div>
+
+                <!-- Section 2: Simplified NIS2 Directive Readiness -->
+                <div class="health-check-section" data-section-id="2" data-max-score="32">
+                    <h3>Section 2: Simplified NIS2 Directive Readiness (32 Points)</h3>
+                    <!-- Questions q10 to q17 -->
+                    <div class="question-item"><p>10. Do you maintain a basic inventory of your critical IT assets (e.g., key computers, servers, important software, customer databases)?</p><div class="options"><label><input type="radio" name="q10" value="4" required> Yes</label><label><input type="radio" name="q10" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>11. Have you identified the primary digital risks that could seriously impact your business operations (e.g., data breach, ransomware attack, system failure)?</p><div class="options"><label><input type="radio" name="q11" value="4" required> Yes</label><label><input type="radio" name="q11" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>12. Do you limit employee access to data and systems based on their job roles and responsibilities (i.e., they only have access to what they strictly need)?</p><div class="options"><label><input type="radio" name="q12" value="4" required> Yes</label><label><input type="radio" name="q12" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>13. Do you have a basic plan or set of steps to follow if a significant cybersecurity incident occurs (e.g., who to contact, initial actions to take)?</p><div class="options"><label><input type="radio" name="q13" value="4" required> Yes</label><label><input type="radio" name="q13" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>14. Have you considered how your business would continue to operate essential functions if your main IT systems were unavailable for an extended period?</p><div class="options"><label><input type="radio" name="q14" value="4" required> Yes</label><label><input type="radio" name="q14" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>15. When working with key suppliers or partners who handle your data or connect to your systems, do you consider their cybersecurity practices?</p><div class="options"><label><input type="radio" name="q15" value="4" required> Yes</label><label><input type="radio" name="q15" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>16. Do you have any written (even if simple) cybersecurity rules or guidelines for your employees?</p><div class="options"><label><input type="radio" name="q16" value="4" required> Yes</label><label><input type="radio" name="q16" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>17. Is cybersecurity and its potential impact on the business discussed at the management or leadership level within your company?</p><div class="options"><label><input type="radio" name="q17" value="4" required> Yes</label><label><input type="radio" name="q17" value="0"> No/Don't Know</label></div></div>
+                </div>
+
+                <!-- Section 3: Initial EU AI Act Awareness & AI System Identification -->
+                <div class="health-check-section" data-section-id="3" data-max-score="32">
+                    <h3>Section 3: Initial EU AI Act Awareness & AI System Identification (32 Points)</h3>
+                     <p class="section-note">Note: For this section, a "Yes" indicates the presence of an AI system or awareness, which is the first step towards governance. Points reflect this recognition.</p>
+                    <!-- Questions q18 to q25 -->
+                    <div class="question-item"><p>18. Does your business use any AI-powered tools for screening job applications, assessing candidates, or employee performance monitoring?</p><div class="options"><label><input type="radio" name="q18" value="4" required> Yes</label><label><input type="radio" name="q18" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>19. Does your business use AI-powered chatbots or virtual assistants to interact with customers?</p><div class="options"><label><input type="radio" name="q19" value="4" required> Yes</label><label><input type="radio" name="q19" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>20. Does your business use AI tools to analyze customer data for behavior patterns, preferences, or to make predictions (e.g., for targeted marketing, churn prediction)?</p><div class="options"><label><input type="radio" name="q20" value="4" required> Yes</label><label><input type="radio" name="q20" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>21. Does your business use AI in core operational processes such as for optimizing logistics, predictive maintenance, or automated quality control in production?</p><div class="options"><label><input type="radio" name="q21" value="4" required> Yes</label><label><input type="radio" name="q21" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>22. If applicable, does your business use AI systems for making significant financial decisions like loan approvals, credit scoring for customers, or fraud detection in financial transactions?</p><div class="options"><label><input type="radio" name="q22" value="4" required> Yes</label><label><input type="radio" name="q22" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>23. If your business uses AI to generate content (text, images, video) for external communication (e.g., marketing, reports), are you aware of the potential need to disclose that it is AI-generated?</p><div class="options"><label><input type="radio" name="q23" value="4" required> Yes</label><label><input type="radio" name="q23" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>24. Are you aware if any of the AI systems you use (or plan to use) could be considered 'high-risk' under the EU AI Act (e.g., systems that could significantly impact safety, fundamental rights, or access to essential services)?</p><div class="options"><label><input type="radio" name="q24" value="4" required> Yes</label><label><input type="radio" name="q24" value="0"> No/Don't Know</label></div></div>
+                    <div class="question-item"><p>25. If you use or develop AI systems, do you consider the quality, relevance, and potential biases of the data used to train or operate these AI systems?</p><div class="options"><label><input type="radio" name="q25" value="4" required> Yes</label><label><input type="radio" name="q25" value="0"> No/Don't Know</label></div></div>
+                </div>
+
+                <button type="submit" class="btn" id="calculateScoreBtn">View My Digital Health Score</button>
+            </form>
+            
+            <!-- The results display is now removed from this page -->
+            <!--
+            <div id="healthCheckResults" class="card health-check-results" style="display:none;">
+                <h3>Your Digital Awakening Results</h3>
+                ...
+            </div>
+            -->
+        </section>
+    </div>
+
+    <script>
+        // --- Firebase Config and Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV5uecwO9YSqd9oc2c6-Bi2qSeQ60bp6I", // Your actual Firebase config
+            authDomain: "aiconnect-ion-lejsx1.firebaseapp.com",
+            databaseURL: "https://aiconnect-ion-lejsx1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aiconnect-ion-lejsx1",
+            storageBucket: "aiconnect-ion-lejsx1.appspot.com",
+            messagingSenderId: "673159361095",
+            appId: "1:673159361095:web:eea12a3dada63a63ea7762"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        let currentUID = null;
+
+        // --- DOM Element Selections ---
+        const healthCheckForm = document.getElementById('healthCheckForm');
+
+        // --- Auth State Change Listener ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUID = user.uid;
+                console.log("User logged in on awakening.html:", currentUID);
+            } else {
+                currentUID = null;
+                console.log("No user logged in on awakening.html.");
+            }
+        });
+        
+        function triggerHapticFeedback(pattern = 50) { if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* Silently fail */ } } }
+
+        function addLogMessageToDB(message, type = 'INFO') {
+            if(!currentUID) {
+                console.log(`Log (local only - no user): [${type}] ${message}`);
+                return Promise.resolve();
+            }
+            const logPath = `users/${currentUID}/activityLog`;
+            const newLogRef = database.ref(logPath).push();
+            return newLogRef.set({
+                timestamp: new Date().toISOString(),
+                message: message,
+                type: type
+            }).catch(err => console.error("Error writing log to DB:", err));
+        }
+
+        if (healthCheckForm) {
+            healthCheckForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                triggerHapticFeedback(50);
+
+                let totalScore = 0;
+                let sectionScores = {
+                    s1: 0, // Basic Cybersecurity Hygiene
+                    s2: 0, // NIS2 Readiness
+                    s3: 0  // EU AI Act Awareness
+                };
+                
+                // Section 1: q1-q9
+                for (let i = 1; i <= 9; i++) {
+                    const selectedOption = healthCheckForm.querySelector(`input[name="q${i}"]:checked`);
+                    if (selectedOption) sectionScores.s1 += parseInt(selectedOption.value);
+                }
+                // Section 2: q10-q17
+                for (let i = 10; i <= 17; i++) {
+                    const selectedOption = healthCheckForm.querySelector(`input[name="q${i}"]:checked`);
+                    if (selectedOption) sectionScores.s2 += parseInt(selectedOption.value);
+                }
+                // Section 3: q18-q25
+                for (let i = 18; i <= 25; i++) {
+                    const selectedOption = healthCheckForm.querySelector(`input[name="q${i}"]:checked`);
+                    if (selectedOption) sectionScores.s3 += parseInt(selectedOption.value);
+                }
+
+                totalScore = sectionScores.s1 + sectionScores.s2 + sectionScores.s3;
+
+                // Save to Firebase if user is logged in
+                if (currentUID) {
+                    const resultsToStore = {
+                        totalScore: totalScore,
+                        section1Score: sectionScores.s1,
+                        section2Score: sectionScores.s2,
+                        section3Score: sectionScores.s3,
+                        timestamp: new Date().toISOString(),
+                    };
+                    const healthCheckPath = `users/${currentUID}/digitalAwakening/healthCheckResults`;
+                    const newHealthCheckRef = database.ref(healthCheckPath).push();
+
+                    newHealthCheckRef.set(resultsToStore)
+                        .then(() => {
+                            addLogMessageToDB(`Digital Awakening Health Check completed. Total Score: ${totalScore}`, 'INFO');
+                            return database.ref(`users/${currentUID}/digitalAwakening/score`).set(totalScore);
+                        })
+                        .then(() => {
+                            console.log("Digital Awakening score updated in DB.");
+                        })
+                        .catch(error => {
+                            console.error("Error saving health check results or score: ", error);
+                            addLogMessageToDB(`Error saving health check results: ${error.message}`, 'ERROR');
+                        });
+                } else {
+                    console.log("Health Check completed (local). Total Score:", totalScore, "Section Scores:", sectionScores, ". User not logged in, results not saved to DB.");
+                }
+
+                // Construct URL and navigate
+                const params = new URLSearchParams({
+                    totalScore: totalScore,
+                    s1Score: sectionScores.s1,
+                    s2Score: sectionScores.s2,
+                    s3Score: sectionScores.s3
+                });
+                window.location.href = `view-score.html?${params.toString()}`;
+            });
+        }
+    </script>
+</body>
+</html>

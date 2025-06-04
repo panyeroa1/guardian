@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Guardian Dashboard</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1e1e">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <p>Loading AI Guardian...</p>
+    </div>
+
+    <div class="dashboard-wrapper" id="dashboardWrapper">
+        <header class="top-nav">
+            <div class="logo">AI Guardian</div>
+            <div class="user-info" id="userInfoTopNav">
+                <span id="userEmailDisplay"></span>
+                <button id="logoutButtonTopNav">Logout</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <aside class="sidebar" id="sidebar">
+                <ul>
+                    <li><a href="#" class="sidebar-link active" data-target="dashboard-content">Dashboard</a></li>
+                    <li><a href="#" class="sidebar-link" data-target="threat-monitor-content">Threat Monitor</a></li>
+                    <li><a href="#" class="sidebar-link" data-target="compliance-content">Compliance</a></li>
+                    <li><a href="#" class="sidebar-link" data-target="digital-awakening-tab-content">Digital Awakening</a></li>
+                    <li><a href="#" class="sidebar-link" data-target="settings-content">Settings</a></li>
+                </ul>
+                <button id="logoutButtonSidebar">Logout</button>
+            </aside>
+
+            <div class="overlay" id="pageOverlay"></div>
+
+            <main class="content-panel" id="contentPanel">
+                <section id="dashboard-content" class="tab-content active">
+                     <div class="card" style="margin-bottom: 20px;">
+                        <h3>Welcome to AI Guardian</h3>
+                        <p>Your AI-Powered Cybersecurity & Compliance platform for SMEs.</p>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="card threat-status-card">
+                            <h3>Threat Status</h3>
+                            <p>Threats Detected: <span id="threatsDetected">0</span></p>
+                            <p>Critical Vulnerabilities: <span id="criticalVulnerabilities">0</span></p>
+                            <p>Last Scan: <span id="lastScanTime">N/A</span></p>
+                            <button class="btn" id="runScanButton">Run Quick Scan</button>
+                        </div>
+                        <div class="card compliance-score-widget">
+                            <h3>Compliance Score</h3>
+                            <div class="progress-ring-container">
+                                <svg class="progress-ring" width="150" height="150">
+                                    <circle class="progress-ring__background" stroke-width="12" r="60" cx="75" cy="75"/>
+                                    <circle class="progress-ring__circle" id="complianceProgressCircle" stroke-width="12" r="60" cx="75" cy="75"/>
+                                </svg>
+                                <span class="progress-ring__text" id="compliancePercentage">0%</span>
+                            </div>
+                            <p style="text-align: center; margin-top: 10px;">Overall SME Compliance Readiness</p>
+                        </div>
+                        <div class="card digital-awakening-card">
+                            <h3>Digital Awakening</h3>
+                            <p>Initiate our AI-driven <strong>Digital Awakening Health Check</strong>.</p>
+                            <button class="btn" id="launchDigitalAwakening">Launch Health Check</button>
+                        </div>
+                        <div class="card log-console">
+                            <h3>Activity Log & Alert Stream</h3>
+                            <ul id="logMessages"></ul>
+                        </div>
+                        <div class="card ai-assistant-card">
+                            <h3>AI Guardian Assistant</h3>
+                            <label for="aiQueryInput">Ask about SME security or compliance: </label>
+                            <textarea id="aiQueryInput"></textarea>
+                            <button class="btn" id="askAIButton">Ask AI Guardian</button>
+                            <div id="aiResponseArea">AI Guardian's response will appear here...</div>
+                            <small class="ai-note">AI Guardian provides guidance based on our core principles. For specific legal advice, consult a professional.</small>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="threat-monitor-content" class="tab-content">
+                    <h2>AI-Powered Threat Monitoring</h2>
+                     <p>AI Guardian leverages AI for proactive threat management.</p>
+                    <div class="card"><h3>Real-time Threat Feed</h3><p>AI Guardian is actively monitoring. No critical threats detected currently.</p></div>
+                    <div class="card" style="margin-top:20px;">
+                        <h3>AI Guardian URL Threat Analyzer</h3>
+                        <p>Get a preliminary AI-powered analysis of a website's potential threat level.</p>
+                        <label for="urlInput">Website URL to Analyze:</label>
+                        <input type="text" id="urlInput">
+                        <button class="btn" id="analyzeUrlButton">Analyze URL with AI Guardian</button>
+                        <div id="aiUrlAnalysisResult">Analysis will appear here...</div>
+                         <small class="ai-note">This analysis is powered by AI Guardian. For comprehensive security, always use dedicated tools.</small>
+                    </div>
+                </section>
+
+                <section id="compliance-content" class="tab-content">
+                     <h2>AI-Simplified Compliance Management</h2>
+                    <p>AI Guardian helps you navigate complex EU regulations (GDPR, NIS2, EU AI Act, CRA).</p>
+                    <div class="regulation-card card"><h4>GDPR</h4><p>AI-assisted RoPAs, DPIA guidance, policy templates.</p><button class="btn btn-small" onclick="triggerHapticFeedback()">Access GDPR Tools</button></div>
+                    <div class="regulation-card card"><h4>NIS2 Directive</h4><p>Simplified mandates, incident reporting templates, risk management guidance.</p><button class="btn btn-small" onclick="triggerHapticFeedback()">Explore NIS2 Guidance</button></div>
+                    <div class="regulation-card card"><h4>EU AI Act & CRA</h4><p>Guidance on AI system risk, deployer obligations, and CRA.</p><button class="btn btn-small" onclick="triggerHapticFeedback()">Understand AI Act & CRA</button></div>
+                    <div class="card" style="margin-top: 20px;">
+                        <h3>AI Guardian Document Generation</h3>
+                        <p>Let AI Guardian Assistant help you draft foundational compliance documents based on general EU principles for SMEs. These are starting points and require legal review.</p>
+                        <button class="btn" id="generateDocsButton">Generate Documents with AI Guardian</button>
+                        <div id="docGenerationStatus" style="margin-top: 15px; min-height: 20px;"></div>
+                        <div style="margin-top: 20px;">
+                            <h4>Generated Privacy Policy (Template)</h4>
+                            <textarea id="privacyPolicyOutput" rows="10" readonly style="width: 100%; background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; font-family: monospace; white-space: pre-wrap;"></textarea>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <h4>Generated Terms of Use (Template)</h4>
+                            <textarea id="termsOfUseOutput" rows="10" readonly style="width: 100%; background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; font-family: monospace; white-space: pre-wrap;"></textarea>
+                        </div>
+                        <small class="ai-note" style="color: var(--warn-color); font-weight:bold; margin-top:15px;">
+                            IMPORTANT: The documents generated here are basic templates for illustrative purposes only. They are NOT legally binding and do NOT constitute legal advice. Always consult with a qualified legal professional to ensure your documents are complete, accurate, and compliant with all applicable laws and regulations for your specific business and jurisdiction.
+                        </small>
+                    </div>
+                </section>
+                <section id="digital-awakening-tab-content" class="tab-content">
+                     <h2>The Digital Awakening Program</h2>
+                    <p>Your first step to secure growth via an intuitive online assessment.</p>
+                    <div class="card"><h3>What you get:</h3><ul><li>Actionable report</li><li>Readiness score</li><li>Prioritized recommendations</li></ul><button class="btn" onclick="triggerHapticFeedback(); document.getElementById('launchDigitalAwakening').click();">Start Health Check</button></div>
+                </section>
+                <section id="settings-content" class="tab-content">
+                    <h2>Platform Settings</h2>
+                    <div class="card">
+                        <h3>Notification Preferences</h3>
+                        <label><input type="checkbox" id="notifCritical" checked> Email alerts for critical threats & compliance deadlines</label><br>
+                        <label><input type="checkbox" id="notifSummary" checked> AI-generated weekly security & compliance summary report</label><br>
+                        <button class="btn" id="saveSettingsButton">Save Settings</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <nav class="bottom-nav-mobile" id="bottomNavMobile">
+            <button data-target="dashboard-content" class="bottom-nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg>
+                Dashboard
+            </button>
+            <button data-target="threat-monitor-content" class="bottom-nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                Threats
+            </button>
+            <button data-target="compliance-content" class="bottom-nav-item">
+                 <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                Compliance
+            </button>
+            <button id="mobileMenuToggle">
+                 <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                Menu
+            </button>
+        </nav>
+    </div>
+
+    <script defer src="js/scripts.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

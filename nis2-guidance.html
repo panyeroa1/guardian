@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIS2 Directive Guidance - AI Guardian</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ffd1;
+            --accent-color-darker: #00cca3;
+            --border-color: #333333;
+            --loader-color: var(--accent-color);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+        }
+        .page-main-header {
+            background-color: var(--card-bg-color);
+            color: var(--accent-color);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .page-main-header .back-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .page-main-header .back-button:hover {
+            background-color: rgba(0, 255, 209, 0.1);
+        }
+        .page-main-header h1 {
+            margin: 0 auto;
+            font-size: 1.8em;
+        }
+        .main-content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .interactive-section, .content-section {
+            background-color: var(--card-bg-color);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .interactive-section h2, .content-section h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-size: 0.9em;
+        }
+        .btn:hover {
+            background-color: var(--accent-color-darker);
+            transform: scale(1.03);
+        }
+        .btn:disabled {
+            background-color: #555; color: #999; cursor: not-allowed; transform: none;
+        }
+        .loader-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+            margin: 20px 0;
+        }
+        .loader {
+            border: 4px solid var(--border-color); 
+            border-top: 4px solid var(--loader-color); 
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .llm-response-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(0,0,0,0.2);
+            border-left: 3px solid var(--accent-color);
+            min-height: 100px;
+            white-space: pre-wrap; 
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .ai-note { display:block; margin-top:10px; color: #aaa; font-size: 0.85em;}
+    </style>
+</head>
+<body>
+    <header class="page-main-header">
+        <a href="index.html#compliance-content" class="back-button" title="Back to Compliance Dashboard">←</a>
+        <h1>NIS2 Guidance</h1>
+    </header>
+
+    <div class="main-content-wrapper">
+        <section class="interactive-section">
+            <h2>AI Guardian on the NIS2 Directive</h2>
+            <p>Ask AI Guardian for an SME-focused summary of the NIS2 Directive, including its scope, key security measures, incident reporting, and supply chain considerations. The AI will generate tailored information below.</p>
+            <button class="btn" id="fetchNis2InfoBtn" style="margin-top:15px;">Ask AI Guardian about NIS2</button>
+            <div id="nis2InfoLoader" class="loader-container" style="display:none;">
+                <div class="loader"></div>
+            </div>
+            <div id="nis2InfoArea" class="llm-response-area" style="display:none;">
+                <!-- LLM generated content will appear here -->
+            </div>
+            <small class="ai-note">This information is AI-generated and for guidance purposes. The NIS2 Directive is complex; consult with legal and cybersecurity professionals for specific advice.</small>
+        </section>
+
+        <section class="content-section">
+            <h3>Further Resources (Manual Links)</h3>
+            <ul>
+                <li><a href="https://digital-strategy.ec.europa.eu/en/policies/nis2-directive" target="_blank" style="color:var(--accent-color)">Official EU Commission Page on NIS2</a></li>
+                <li><a href="https://www.enisa.europa.eu/topics/nis-directive" target="_blank" style="color:var(--accent-color)">ENISA (EU Agency for Cybersecurity) on NIS</a></li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        // --- Firebase Config and Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV5uecwO9YSqd9oc2c6-Bi2qSeQ60bp6I",
+            authDomain: "aiconnect-ion-lejsx1.firebaseapp.com",
+            databaseURL: "https://aiconnect-ion-lejsx1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aiconnect-ion-lejsx1",
+            storageBucket: "aiconnect-ion-lejsx1.appspot.com",
+            messagingSenderId: "673159361095",
+            appId: "1:673159361095:web:eea12a3dada63a63ea7762"
+        };
+        firebase.initializeApp(firebaseConfig);
+        // Auth and DB can be used if needed for user-specific context or logging later
+        // const auth = firebase.auth(); 
+        // const database = firebase.database();
+
+        // --- TogetherAI API Details ---
+        const TOGETHER_API_KEY = "3b1c02603a0137c8c8b265ef1ed02c3e448c089a44f052ca6acf54210fa6b34c";
+        const TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions";
+        const LLM_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free";
+        
+        const aiGuardianSystemPrompt = `You are Emilio, AI Guardian’s virtual cybersecurity and compliance assistant for European small and medium-sized enterprises (SMEs). In this role, you serve as an always-available expert advisor — essentially a virtual Chief Information Security Officer (CISO) and Compliance Officer — who communicates in friendly, plain language. AI Guardian’s unified platform merges AI-driven cybersecurity with AI-simplified compliance management — covering regulations like GDPR, NIS2, the EU AI Act, and the Cyber Resilience Act — into a single, intuitive interface. Your mission is to keep users secure and compliant by detecting threats early, translating complex regulations into practical steps, and coaching them through security and compliance tasks with confidence and empathy. Focus on providing actionable, summarized information suitable for an SME audience. Use clear headings (e.g., ## Heading) and bullet points for readability.`;
+
+        // --- DOM Elements ---
+        const fetchNis2InfoBtn = document.getElementById('fetchNis2InfoBtn');
+        const nis2InfoLoader = document.getElementById('nis2InfoLoader');
+        const nis2InfoArea = document.getElementById('nis2InfoArea');
+
+        // --- LLM Call Function ---
+        async function callAIGuardianLLM_PageContent(userQuery, targetElement, loaderElement) {
+            if (loaderElement) loaderElement.style.display = 'flex';
+            if (targetElement) targetElement.style.display = 'none';
+            
+            const messages = [{ "role": "system", "content": aiGuardianSystemPrompt }, { "role": "user", "content": userQuery }];
+            try {
+                const response = await fetch(TOGETHER_API_URL, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${TOGETHER_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: LLM_MODEL, messages: messages, max_tokens: 2000, temperature: 0.7 }) 
+                });
+                if (!response.ok) { 
+                    const errTxt = await response.text(); 
+                    throw new Error(`API Error ${response.status}: ${errTxt}`); 
+                }
+                const data = await response.json();
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const rawResponse = data.choices[0].message.content.trim();
+                    let htmlResponse = rawResponse
+                        .replace(/## (.*?)\n/g, '<h3>$1</h3>')
+                        .replace(/\* (.*?)\n/g, '<li>$1</li>')
+                        .replace(/(\<\/li\>)(?![\s\S]*\<\/li\>)/g, '$1</ul>')
+                        .replace(/(<h3>[\s\S]*?)(<li>)/g, '$1<ul>$2');
+                    if (htmlResponse.includes('<li>') && !htmlResponse.substring(0, htmlResponse.indexOf('<li>')).includes('<ul>')) {
+                         htmlResponse = htmlResponse.replace('<li>', '<ul><li>');
+                         if(!htmlResponse.endsWith('</ul>')) htmlResponse += '</ul>';
+                    }
+
+                    if (targetElement) {
+                        targetElement.innerHTML = htmlResponse;
+                        targetElement.style.display = 'block';
+                    }
+                    return rawResponse; 
+                } else { 
+                    throw new Error("Unexpected API response structure from LLM."); 
+                }
+            } catch (error) {
+                console.error("Error calling AI Guardian LLM:", error);
+                const errorMessage = `AI Guardian Error: ${error.message}. Please try again later.`;
+                if (targetElement) {
+                    targetElement.textContent = errorMessage;
+                    targetElement.style.display = 'block';
+                    targetElement.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                }
+                return errorMessage;
+            } finally {
+                if (loaderElement) loaderElement.style.display = 'none';
+            }
+        }
+
+        if (fetchNis2InfoBtn) {
+            fetchNis2InfoBtn.addEventListener('click', async () => {
+                fetchNis2InfoBtn.disabled = true;
+                const nis2Prompt = `As Emilio, AI Guardian's assistant, provide an SME-friendly overview of the NIS2 Directive. Structure your response with clear ## Headings and bullet points. Address the following:
+1.  **Scope for SMEs:** Briefly explain how an SME might determine if NIS2 applies to them. Mention the concepts of "essential" and "important" entities and the relevance of sector and size. Advise them to check national transpositions.
+2.  **Key Cybersecurity Risk Management Measures:** List and briefly explain 4-5 core security measures SMEs should focus on, such as:
+    *   Risk analysis and information system security policies.
+    *   Incident handling (prevention, detection, response).
+    *   Business continuity and crisis management (e.g., backup management, disaster recovery).
+    *   Supply chain security (basic considerations for suppliers).
+    *   Security in network and information systems acquisition, development, and maintenance, including vulnerability handling and disclosure.
+    *   Use of cryptography and encryption where appropriate.
+3.  **Incident Reporting Basics:** What is the general idea behind incident reporting under NIS2? Mention the multi-stage approach (e.g., early warning within 24h, detailed notification later) for significant incidents.
+4.  **Management Responsibility:** Briefly touch upon the fact that management bodies have a key role and can be held accountable.
+
+Keep the language simple, practical, and focused on creating awareness for an SME owner.`;
+                
+                await callAIGuardianLLM_PageContent(nis2Prompt, nis2InfoArea, nis2InfoLoader);
+                fetchNis2InfoBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

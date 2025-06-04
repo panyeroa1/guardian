@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Digital Awakening Score - AI Guardian</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ffd1;
+            --accent-color-darker: #00cca3;
+            --border-color: #333333;
+            --shadow-color: rgba(0, 255, 209, 0.1);
+            --shadow-color-dark: rgba(0, 0, 0, 0.3);
+            
+            /* Severity Colors */
+            --severe-color: #ff4d4d; /* Error Red */
+            --warning-color: #ffd700; /* Warn Yellow */
+            --moderate-color: #ffa726; /* Orange for 'Good, room for growth' */
+            --good-color: #66bb6a;   /* Green for 'Excellent' */
+            --neutral-accent: #00bcd4; /* Original accent color for graph/default */
+
+            /* Colors for graph bars */
+            --bar-color-s1: #00bcd4; 
+            --bar-color-s2: #ff9800; 
+            --bar-color-s3: #9c27b0; 
+            --bar-bg-color: #444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 0;
+        }
+        .page-main-header {
+            background-color: var(--card-bg-color);
+            color: var(--accent-color); /* Main header keeps original accent */
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .page-main-header .back-button {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .page-main-header .back-button:hover {
+            background-color: rgba(0, 255, 209, 0.1);
+        }
+        .page-main-header h1 {
+            margin: 0 auto;
+            font-size: 1.8em;
+        }
+        .main-content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            background-color: var(--card-bg-color);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px var(--shadow-color-dark); /* Simplified shadow for focus on content */
+        }
+        .card h2, .card h3, .card h4 {
+            /* Color will be set dynamically or by specific classes */
+            margin-top: 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 0.95em;
+        }
+        .btn:hover {
+            background-color: var(--accent-color-darker);
+            transform: scale(1.05);
+        }
+        .ai-note { display:block; margin-top:10px; color: #aaa; font-size: 0.85em;}
+        .results-hr {
+            border: 0;
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 25px 0;
+        }
+
+        /* Score Display Styles */
+        .total-score-display {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px; /* Add some padding */
+            border-radius: 8px;
+            transition: background-color 0.5s ease, border-left-color 0.5s ease;
+        }
+        .total-score-display p {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        #displayedTotalScore {
+            font-size: 3.5em;
+            font-weight: bold;
+            transition: color 0.5s ease;
+        }
+        /* Dynamic coloring classes for total score */
+        .score-excellent { background-color: rgba(102, 187, 106, 0.1); border-left: 5px solid var(--good-color); }
+        .score-excellent #displayedTotalScore { color: var(--good-color); }
+        .score-good { background-color: rgba(255, 167, 38, 0.1); border-left: 5px solid var(--moderate-color); }
+        .score-good #displayedTotalScore { color: var(--moderate-color); }
+        .score-emerging { background-color: rgba(255, 215, 0, 0.1); border-left: 5px solid var(--warning-color); }
+        .score-emerging #displayedTotalScore { color: var(--warning-color); }
+        .score-early { background-color: rgba(255, 77, 77, 0.1); border-left: 5px solid var(--severe-color); }
+        .score-early #displayedTotalScore { color: var(--severe-color); }
+
+
+        /* Graph Styles */
+        .score-graph-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end; 
+            height: 250px; 
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .graph-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 28%; /* Slightly more space */
+            text-align: center;
+        }
+        .graph-bar {
+            width: 60px; 
+            background-color: var(--bar-bg-color); 
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            height: 100%; 
+            display: flex;
+            align-items: flex-end; 
+        }
+        .graph-bar .bar-fill {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            height: 0%; 
+            transition: height 1s ease-out 0.3s, background-color 0.5s ease; 
+            position: relative;
+        }
+        .graph-bar .bar-fill::after { 
+            content: attr(data-score);
+            position: absolute;
+            top: -25px; 
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: opacity 0.5s ease-out 1.3s; 
+        }
+        .graph-bar.animated .bar-fill::after {
+            opacity: 1;
+        }
+        /* Default bar colors */
+        #barS1 .bar-fill { background-color: var(--bar-color-s1); }
+        #barS2 .bar-fill { background-color: var(--bar-color-s2); }
+        #barS3 .bar-fill { background-color: var(--bar-color-s3); }
+        
+        /* Low score bar color override */
+        .bar-fill.low-score-bar { background-color: var(--severe-color) !important; }
+        .bar-fill.medium-score-bar { background-color: var(--warning-color) !important; }
+
+
+        .bar-label {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #bbb;
+        }
+
+        #scoreInterpretationCard { 
+            margin-bottom: 30px; 
+            transition: border-left-color 0.5s ease;
+        }
+        /* Dynamic border color for interpretation card */
+        .interpretation-excellent { border-left: 5px solid var(--good-color); }
+        .interpretation-good { border-left: 5px solid var(--moderate-color); }
+        .interpretation-emerging { border-left: 5px solid var(--warning-color); }
+        .interpretation-early { border-left: 5px solid var(--severe-color); }
+
+        #scoreInterpretation {
+            margin-top: 0; 
+            padding: 15px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        #scoreInterpretation strong {
+            /* Color will be set dynamically */
+            display: flex; /* For icon alignment */
+            align-items: center; /* For icon alignment */
+            margin-bottom: 8px;
+            font-size: 1.2em; /* Slightly larger title */
+            font-weight: bold;
+        }
+        .interpretation-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .next-steps-options label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+        .next-steps-options input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: var(--accent-color);
+            transform: scale(1.2);
+            width: auto;
+            margin-bottom: 0;
+        }
+        .next-steps-options input[type="email"] {
+            width: 100%;
+            max-width: 350px;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+         .next-steps-options input[type="email"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+        #submitNextStepsBtn {
+            width: auto;
+        }
+        .learn-more {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .learn-more a {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="page-main-header">
+        <a href="awakening.html" class="back-button" title="Back to Health Check">←</a>
+        <h1>Your Score</h1>
+    </header>
+
+    <div class="main-content-wrapper">
+        <section class="card total-score-display" id="totalScoreCard">
+            <p>Your Overall Digital Health Score:</p>
+            <div id="displayedTotalScore">0 / 100</div>
+        </section>
+
+        <section class="card">
+            <h2>Score Breakdown</h2>
+            <div class="score-graph-container">
+                <div class="graph-bar-wrapper">
+                    <div class="graph-bar" id="barS1">
+                        <div class="bar-fill" data-score="0/36"></div>
+                    </div>
+                    <div class="bar-label">Cybersecurity Hygiene (36)</div>
+                </div>
+                <div class="graph-bar-wrapper">
+                    <div class="graph-bar" id="barS2">
+                        <div class="bar-fill" data-score="0/32"></div>
+                    </div>
+                    <div class="bar-label">NIS2 Readiness (32)</div>
+                </div>
+                <div class="graph-bar-wrapper">
+                    <div class="graph-bar" id="barS3">
+                        <div class="bar-fill" data-score="0/32"></div>
+                    </div>
+                    <div class="bar-label">AI Act Awareness (32)</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" id="scoreInterpretationCard">
+            <h2>Interpretation</h2>
+            <div id="scoreInterpretation">
+                <p>Calculating your interpretation...</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Next Steps</h2>
+            <p>Understanding your current digital health is the first step. AI Guardian is here to help you navigate the complexities of cybersecurity and EU compliance.</p>
+            <div class="next-steps-options" style="margin-top: 20px;">
+                <label for="userEmailForSummary">
+                    <input type="checkbox" id="sendSummaryCheck"> I would like to receive a summary of my results via email.
+                </label>
+                <input type="email" id="userEmailForSummary" placeholder="Enter your email address" style="display:none;">
+                
+                <label style="margin-top:15px;">
+                    <input type="checkbox" id="requestConsultationCheck"> I'm interested in a free consultation to discuss how AI Guardian can help my business.
+                </label>
+                 <button class="btn" id="submitNextStepsBtn" style="margin-top:20px; display:none;">Submit Request</button>
+            </div>
+            <p class="learn-more">Learn more about AI Guardian's integrated solutions at <a href="https://www.aiguardian.eu" target="_blank">www.aiguardian.eu</a> (replace with your actual link).</p>
+             <small class="ai-note" style="margin-top: 15px; text-align:center;">These results provide a high-level overview. For detailed analysis and tailored recommendations, further engagement is advised.</small>
+        </section>
+    </div>
+
+    <script>
+        // --- Firebase Config and Initialization ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDV5uecwO9YSqd9oc2c6-Bi2qSeQ60bp6I", 
+            authDomain: "aiconnect-ion-lejsx1.firebaseapp.com",
+            databaseURL: "https://aiconnect-ion-lejsx1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "aiconnect-ion-lejsx1",
+            storageBucket: "aiconnect-ion-lejsx1.appspot.com",
+            messagingSenderId: "673159361095",
+            appId: "1:673159361095:web:eea12a3dada63a63ea7762"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+        let currentUID = null;
+
+        // --- DOM Element Selections ---
+        const totalScoreCardEl = document.getElementById('totalScoreCard');
+        const displayedTotalScoreEl = document.getElementById('displayedTotalScore');
+        const scoreInterpretationCardEl = document.getElementById('scoreInterpretationCard');
+        const scoreInterpretationEl = document.getElementById('scoreInterpretation');
+        const sendSummaryCheck = document.getElementById('sendSummaryCheck');
+        const userEmailForSummaryInput = document.getElementById('userEmailForSummary');
+        const requestConsultationCheck = document.getElementById('requestConsultationCheck');
+        const submitNextStepsBtn = document.getElementById('submitNextStepsBtn');
+
+        const barS1Fill = document.querySelector('#barS1 .bar-fill');
+        const barS2Fill = document.querySelector('#barS2 .bar-fill');
+        const barS3Fill = document.querySelector('#barS3 .bar-fill');
+
+        const MAX_SCORE_S1 = 36;
+        const MAX_SCORE_S2 = 32;
+        const MAX_SCORE_S3 = 32;
+
+        // SVG Warning Icon
+        const warningIconSVG = `<svg class="interpretation-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.00002L0.686523 21.0001H23.3135L12 1.00002ZM11 15.0001V17.0001H13V15.0001H11ZM11 9.00007V13.0001H13V9.00007H11Z"/></svg>`;
+        const goodIconSVG = `<svg class="interpretation-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.99999 15.1709L19.1924 5.97852L20.6066 7.39273L9.99999 17.9993L3.63603 11.6354L5.05024 10.2212L9.99999 15.1709Z"/></svg>`;
+
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUID = user.uid;
+                if (sendSummaryCheck && sendSummaryCheck.checked && userEmailForSummaryInput) {
+                    userEmailForSummaryInput.value = user.email || '';
+                }
+            } else {
+                currentUID = null;
+            }
+        });
+        
+        function triggerHapticFeedback(pattern = 50) { if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* Silently fail */ } } }
+        
+        function addLogMessageToDB(message, type = 'INFO') {
+            if(!currentUID) {
+                console.log(`Log (local only - no user): [${type}] ${message}`);
+                return Promise.resolve();
+            }
+            const logPath = `users/${currentUID}/activityLog`;
+            const newLogRef = database.ref(logPath).push();
+            return newLogRef.set({
+                timestamp: new Date().toISOString(),
+                message: message,
+                type: type
+            }).catch(err => console.error("Error writing log to DB:", err));
+        }
+
+        function displayScoreInterpretation(score) {
+            let interpretationTitle = "";
+            let interpretationText = "";
+            let titleColor = "var(--accent-color)";
+            let iconHTML = "";
+            let totalScoreClass = "";
+            let interpretationCardClass = "";
+
+            if (score >= 80) {
+                interpretationTitle = "Excellent Digital Awakening!";
+                interpretationText = "Your business shows strong awareness and has implemented many good practices regarding basic cybersecurity and initial considerations for NIS2 and the EU AI Act. Continue to monitor and refine your approach.";
+                titleColor = "var(--good-color)";
+                iconHTML = goodIconSVG.replace('fill="currentColor"', `fill="${getComputedStyle(document.documentElement).getPropertyValue('--good-color').trim()}"`);
+                totalScoreClass = "score-excellent";
+                interpretationCardClass = "interpretation-excellent";
+            } else if (score >= 50) {
+                interpretationTitle = "Good Digital Awakening, Room for Growth.";
+                interpretationText = "Your business has several good practices in place but there are important areas, particularly concerning upcoming EU regulations and advanced cybersecurity measures, that need attention. This is a good foundation to build upon.";
+                titleColor = "var(--moderate-color)";
+                totalScoreClass = "score-good";
+                interpretationCardClass = "interpretation-good";
+            } else if (score >= 20) {
+                interpretationTitle = "Emerging Digital Awakening, Key Areas to Address!";
+                interpretationText = "<strong>Warning:</strong> Your business has started to address some digital health aspects, but there are significant gaps in basic cybersecurity and awareness of NIS2 and EU AI Act requirements. Proactive steps are highly recommended to mitigate potential risks.";
+                titleColor = "var(--warning-color)";
+                iconHTML = warningIconSVG.replace('fill="currentColor"', `fill="${getComputedStyle(document.documentElement).getPropertyValue('--warning-color').trim()}"`);
+                totalScoreClass = "score-emerging";
+                interpretationCardClass = "interpretation-emerging";
+            } else {
+                interpretationTitle = "Early Digital Awakening, Urgent Attention Needed!";
+                interpretationText = "<strong>URGENT:</strong> Your business appears to be at a very early stage of digital health awareness. It's crucial to address basic cybersecurity immediately and begin understanding your obligations under NIS2 and the EU AI Act to protect your business from significant threats and ensure compliance.";
+                titleColor = "var(--severe-color)";
+                iconHTML = warningIconSVG.replace('fill="currentColor"', `fill="${getComputedStyle(document.documentElement).getPropertyValue('--severe-color').trim()}"`);
+                totalScoreClass = "score-early";
+                interpretationCardClass = "interpretation-early";
+            }
+            scoreInterpretationEl.innerHTML = `<strong style="color:${titleColor};">${iconHTML}${interpretationTitle}</strong><p>${interpretationText}</p>`;
+            
+            totalScoreCardEl.className = "card total-score-display " + totalScoreClass;
+            scoreInterpretationCardEl.className = "card " + interpretationCardClass;
+        }
+
+        function animateBar(barFillElement, score, maxScore) {
+            if (!barFillElement) return;
+            const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+            barFillElement.style.height = `${Math.min(100, Math.max(0, percentage))}%`;
+            barFillElement.setAttribute('data-score', `${score}/${maxScore}`);
+            
+            // Change bar color based on score percentage for individual sections
+            if (percentage < 34) { // Roughly less than 1/3
+                barFillElement.classList.add('low-score-bar');
+            } else if (percentage < 67) { // Roughly less than 2/3
+                 barFillElement.classList.add('medium-score-bar');
+            } else {
+                // Keep default color from CSS (or set explicitly if needed)
+            }
+
+            setTimeout(() => {
+                 barFillElement.parentElement.classList.add('animated');
+            }, 1300);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const totalScore = parseInt(urlParams.get('totalScore')) || 0;
+            const s1Score = parseInt(urlParams.get('s1Score')) || 0;
+            const s2Score = parseInt(urlParams.get('s2Score')) || 0;
+            const s3Score = parseInt(urlParams.get('s3Score')) || 0;
+
+            if (displayedTotalScoreEl) {
+                displayedTotalScoreEl.textContent = `${totalScore} / 100`;
+            }
+            if (scoreInterpretationEl) {
+                displayScoreInterpretation(totalScore);
+            }
+
+            setTimeout(() => {
+                animateBar(barS1Fill, s1Score, MAX_SCORE_S1);
+                animateBar(barS2Fill, s2Score, MAX_SCORE_S2);
+                animateBar(barS3Fill, s3Score, MAX_SCORE_S3);
+            }, 100);
+
+            if (sendSummaryCheck) {
+                sendSummaryCheck.addEventListener('change', function() {
+                    userEmailForSummaryInput.style.display = this.checked ? 'block' : 'none';
+                    if (this.checked && auth.currentUser && auth.currentUser.email) {
+                        userEmailForSummaryInput.value = auth.currentUser.email;
+                    } else if (!this.checked) {
+                         userEmailForSummaryInput.value = '';
+                    }
+                    toggleSubmitNextStepsButton();
+                });
+            }
+            if (requestConsultationCheck) {
+                requestConsultationCheck.addEventListener('change', toggleSubmitNextStepsButton);
+            }
+            if (submitNextStepsBtn) {
+                submitNextStepsBtn.addEventListener('click', function() {
+                    triggerHapticFeedback();
+                    let userEmailForAction = '';
+                    let wantsSummary = sendSummaryCheck.checked;
+                    let wantsConsultation = requestConsultationCheck.checked;
+                    let logMessage = "User health check follow-up from results page: ";
+                    let requestsMade = [];
+
+                    if (wantsSummary) {
+                        userEmailForAction = userEmailForSummaryInput.value.trim();
+                        if (!userEmailForAction || !/\S+@\S+\.\S+/.test(userEmailForAction)) {
+                            alert("Please enter a valid email address to receive the summary.");
+                            return;
+                        }
+                        logMessage += `Wants summary (email: ${userEmailForAction}). `;
+                        requestsMade.push(`Summary request for ${userEmailForAction}`);
+                        console.log("MVP: Send summary to " + userEmailForAction);
+                    }
+
+                    if (wantsConsultation) {
+                        const consultationEmail = (auth.currentUser && auth.currentUser.email) ? auth.currentUser.email : userEmailForAction || "Not specified";
+                        logMessage += `Wants consultation (contact via: ${consultationEmail}).`;
+                        requestsMade.push(`Consultation request (contact: ${consultationEmail})`);
+                        console.log("MVP: Notify admin for consultation for " + consultationEmail);
+                    }
+                    
+                    if (requestsMade.length > 0) {
+                        addLogMessageToDB(logMessage.substring(0,250), 'INFO');
+                        alert("Thank you! Your request(s) have been noted: " + requestsMade.join(", ") + ".");
+                        
+                        submitNextStepsBtn.disabled = true;
+                        submitNextStepsBtn.textContent = "Request Submitted";
+                    } else {
+                        alert("Please select an option before submitting.");
+                    }
+                });
+            }
+        });
+
+        function toggleSubmitNextStepsButton() {
+            if (sendSummaryCheck && requestConsultationCheck && submitNextStepsBtn) {
+                submitNextStepsBtn.style.display = (sendSummaryCheck.checked || requestConsultationCheck.checked) ? 'inline-block' : 'none';
+            }
+        }
+    </script>
+</body>
+</html>

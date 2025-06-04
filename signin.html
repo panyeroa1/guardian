@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Sign In – AI Guardian</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root{
+      --bg:#121212;
+      --card:#1e1e1e;
+      --text:#e0e0e0;
+      --accent:#00ffd1;
+      --accent-dark:#00cca3;
+      --border:#333;
+      --error:#ff4d4d;
+      --success:#2ecc71;
+      --google:#4285F4;
+      --google-dark:#357ae8;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Helvetica,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      padding:20px;
+    }
+    .card{
+      width:100%;
+      max-width:400px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:30px;
+      box-shadow:0 6px 20px rgba(0,0,0,.35),0 0 8px rgba(0,255,209,.08);
+    }
+    h1{
+      margin:0 0 24px;
+      color:var(--accent);
+      font-size:1.6rem;
+      text-align:center;
+    }
+    label{
+      display:block;
+      margin:0 0 6px;
+      font-weight:600;
+    }
+    input{
+      width:100%;
+      padding:10px;
+      margin-bottom:16px;
+      border:1px solid var(--border);
+      border-radius:4px;
+      background:var(--bg);
+      color:var(--text);
+      font-size:1rem;
+    }
+    input:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 5px var(--accent);
+    }
+    button{
+      width:100%;
+      padding:12px;
+      margin-bottom:12px;
+      border:none;
+      border-radius:4px;
+      font-weight:700;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition:.2s;
+      background:var(--accent);
+      color:var(--bg);
+    }
+    button:hover{background:var(--accent-dark)}
+    button:disabled{
+      background:#555;
+      color:#888;
+      cursor:not-allowed;
+    }
+    .google{background:var(--google);color:#fff}
+    .google:hover{background:var(--google-dark)}
+    .links{
+      display:flex;
+      justify-content:space-between;
+      font-size:.9em;
+      margin-top:15px;
+    }
+    .links span{
+      cursor:pointer;
+      color:var(--accent);
+      text-decoration:underline;
+    }
+    .msg{
+      min-height:1.2em;
+      text-align:center;
+      font-weight:700;
+      margin-top:10px;
+    }
+    .error{color:var(--error)}
+    .success{color:var(--success)}
+    .or{
+      text-align:center;
+      margin:20px 0;
+      position:relative;
+      color:#777;
+    }
+    .or::before,.or::after{
+      content:"";
+      position:absolute;
+      top:50%;
+      width:42%;
+      height:1px;
+      background:var(--border);
+    }
+    .or::before{left:0}
+    .or::after{right:0}
+    .agreement{
+      display:flex;
+      align-items:center;
+      font-size:.85em;
+      margin:10px 0 18px;
+    }
+    .agreement input{
+      margin-right:8px;
+      transform:scale(1.2);
+      accent-color:var(--accent);
+    }
+    .agreement a{
+      color:var(--accent);
+      text-decoration:underline;
+    }
+    .agreement a:hover{color:var(--accent-dark)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="authTitle">Login to AI Guardian</h1>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required>
+
+    <div id="passwordSection">
+      <label for="password">Password</label>
+      <input type="password" id="password" required>
+    </div>
+
+    <div class="agreement" id="agreementSection" style="display:none;">
+      <input type="checkbox" id="agree">
+      <label for="agree">
+        I agree to the <a href="terms.html" target="_blank">Terms&nbsp;of&nbsp;Use</a> and
+        <a href="privacy.html" target="_blank">Privacy&nbsp;Policy</a>.
+      </label>
+    </div>
+
+    <button id="authBtn" type="button">Login</button>
+    <button id="signupBtn" type="button" style="display:none;" disabled>Sign&nbsp;Up</button>
+    <button id="resetBtn" type="button" style="display:none;">Send&nbsp;Reset&nbsp;Link</button>
+
+    <div class="or">OR</div>
+    <button id="googleBtn" type="button" class="google">Sign in with Google</button>
+
+    <p id="msg" class="msg">&nbsp;</p>
+
+    <div class="links">
+      <span id="toggleLink">Don't have an account? Sign Up</span>
+      <span id="forgotLink">Forgot Password?</span>
+    </div>
+  </div>
+
+  <script>
+    /* --- Firebase init --------------------------------------------------- */
+    firebase.initializeApp({
+      apiKey:"AIzaSyDV5uecwO9YSqd9oc2c6-Bi2qSeQ60bp6I",
+      authDomain:"aiconnect-ion-lejsx1.firebaseapp.com",
+      databaseURL:"https://aiconnect-ion-lejsx1-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:"aiconnect-ion-lejsx1",
+      storageBucket:"aiconnect-ion-lejsx1.appspot.com",
+      messagingSenderId:"673159361095",
+      appId:"1:673159361095:web:eea12a3dada63a63ea7762"
+    });
+    const auth=firebase.auth();
+    const db=firebase.database();
+    const googleProvider=new firebase.auth.GoogleAuthProvider();
+
+    /* --- Element refs ---------------------------------------------------- */
+    const emailEl=document.getElementById('email');
+    const passEl=document.getElementById('password');
+    const passwordBox=document.getElementById('passwordSection');
+    const agreeBox=document.getElementById('agreementSection');
+    const agreeChk=document.getElementById('agree');
+
+    const authBtn=document.getElementById('authBtn');
+    const signupBtn=document.getElementById('signupBtn');
+    const resetBtn=document.getElementById('resetBtn');
+    const googleBtn=document.getElementById('googleBtn');
+
+    const toggleLink=document.getElementById('toggleLink');
+    const forgotLink=document.getElementById('forgotLink');
+    const titleEl=document.getElementById('authTitle');
+    const msgEl=document.getElementById('msg');
+
+    let mode='login';           // login | signup | reset
+    updateUI();
+
+    /* --- UI Helpers ------------------------------------------------------ */
+    function flash(text,type=''){msgEl.textContent=text;msgEl.className=`msg ${type}`}
+    function updateUI(){
+      flash('\u00A0');
+      passwordBox.style.display=(mode==='reset')?'none':'block';
+      forgotLink.style.display=(mode==='reset')?'none':'block';
+      googleBtn.style.display=(mode==='reset')?'none':'block';
+      document.querySelector('.or').style.display=(mode==='reset')?'none':'block';
+      agreeBox.style.display=(mode==='signup')?'flex':'none';
+
+      if(mode==='login'){
+        titleEl.textContent='Login to AI Guardian';
+        authBtn.style.display='block';
+        signupBtn.style.display=resetBtn.style.display='none';
+        toggleLink.textContent="Don't have an account? Sign Up";
+      }else if(mode==='signup'){
+        titleEl.textContent='Sign Up for AI Guardian';
+        authBtn.style.display='none';
+        signupBtn.style.display='block';
+        signupBtn.disabled=!agreeChk.checked;
+        resetBtn.style.display='none';
+        toggleLink.textContent='Already have an account? Login';
+      }else{ // reset
+        titleEl.textContent='Reset Password';
+        authBtn.style.display=signupBtn.style.display='none';
+        resetBtn.style.display='block';
+        toggleLink.textContent='Back to Login';
+      }
+    }
+
+    /* --- Auth Flow ------------------------------------------------------- */
+    auth.onAuthStateChanged(user=>{
+      if(!user) return;
+      db.ref('users/'+user.uid).once('value')
+        .then(snap=>{
+          if(!snap.exists()) return initUser(user);
+        })
+        .finally(()=>location.href='index.html')
+        .catch(()=>location.href='index.html');
+    });
+
+    function initUser(u){
+      const now=new Date().toISOString();
+      const name=u.displayName||u.email.split('@')[0];
+      const provider=u.providerData[0]?.providerId||'password';
+      const data={
+        profile:{email:u.email,name,joined:now,provider},
+        dashboard:{threatStatus:{detected:0,critical:0,lastScan:"N/A"},complianceScore:25},
+        digitalAwakening:{status:"not_started",lastLaunched:null},
+        settings:{notifications:{critical:true,summary:true}},
+        activityLog:{[Date.now()]:{timestamp:now,message:`Welcome ${name}!`,type:"INFO"}}
+      };
+      return db.ref(`users/${u.uid}`).set(data);
+    }
+
+    /* --- Events ---------------------------------------------------------- */
+    agreeChk.onchange=()=>{if(mode==='signup') signupBtn.disabled=!agreeChk.checked};
+
+    toggleLink.onclick=()=>{
+      mode=(mode==='login')?'signup':(mode==='signup')?'login':'login';
+      agreeChk.checked=false;
+      updateUI();
+    };
+
+    forgotLink.onclick=()=>{mode='reset';updateUI()};
+
+    authBtn.onclick=()=>{
+      flash('\u00A0');
+      auth.signInWithEmailAndPassword(emailEl.value,passEl.value)
+        .then(()=>flash('Login successful! Redirecting…','success'))
+        .catch(e=>flash(e.message,'error'));
+    };
+
+    signupBtn.onclick=()=>{
+      if(!agreeChk.checked) return flash('Please accept the terms first.','error');
+      flash('\u00A0');
+      auth.createUserWithEmailAndPassword(emailEl.value,passEl.value)
+        .then(c=>{
+          db.ref(`users/${c.user.uid}/profile/termsAgreedTimestamp`).set(new Date().toISOString());
+          flash('Signup successful! Redirecting…','success');
+        })
+        .catch(e=>flash(e.message,'error'));
+    };
+
+    resetBtn.onclick=()=>{
+      if(!emailEl.value) return flash('Enter your email address.','error');
+      flash('\u00A0');
+      auth.sendPasswordResetEmail(emailEl.value)
+        .then(()=>flash('Reset link sent! Check your inbox.','success'))
+        .catch(e=>flash(e.message,'error'));
+    };
+
+    googleBtn.onclick=()=>{
+      flash('\u00A0');
+      auth.signInWithPopup(googleProvider)
+        .then(()=>flash('Google sign-in successful! Redirecting…','success'))
+        .catch(e=>flash('Google Sign-In Error: '+e.message,'error'));
+    };
+  </script>
+</body>
+</html>

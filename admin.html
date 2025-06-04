@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>User List – AI Guardian</title>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #00ffd1;
+      --border: #333;
+      --header-text: #f0f0f0;
+    }
+    body {
+      margin: 0;
+      font-family: Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    }
+    h1 {
+      color: var(--accent);
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .user-list {
+      list-style: none;
+      padding: 0;
+    }
+    .user-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,.2);
+    }
+    .user-item strong {
+      color: var(--accent);
+      display: inline-block;
+      min-width: 150px; /* For alignment */
+    }
+    .user-item p {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+    .user-item span {
+      color: var(--text);
+    }
+    .note {
+        font-size: 0.9em;
+        color: #aaa;
+        margin-top: 5px;
+        font-style: italic;
+    }
+    #loadingMessage, #errorMessage {
+        text-align: center;
+        padding: 20px;
+        font-size: 1.2em;
+    }
+    #errorMessage {
+        color: #ff4d4d;
+    }
+    a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Guardian User List</h1>
+    <p style="text-align:center; margin-bottom: 20px;">
+        <a href="auth.html">« Back to Login Page</a>
+    </p>
+
+    <div id="loadingMessage">Loading user data...</div>
+    <div id="errorMessage" style="display:none;"></div>
+    <ul id="userList" class="user-list">
+      <!-- User items will be injected here by JavaScript -->
+    </ul>
+  </div>
+
+  <script>
+    /* --- Firebase init (Same as your auth page) ----------------------- */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDV5uecwO9YSqd9oc2c6-Bi2qSeQ60bp6I", // Replace with your actual API key if different
+      authDomain: "aiconnect-ion-lejsx1.firebaseapp.com",
+      databaseURL: "https://aiconnect-ion-lejsx1-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "aiconnect-ion-lejsx1",
+      storageBucket: "aiconnect-ion-lejsx1.appspot.com",
+      messagingSenderId: "673159361095",
+      appId: "1:673159361095:web:eea12a3dada63a63ea7762"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    /* --- DOM Elements ------------------------------------------------- */
+    const userListEl = document.getElementById('userList');
+    const loadingMessageEl = document.getElementById('loadingMessage');
+    const errorMessageEl = document.getElementById('errorMessage');
+
+    /* --- Fetch and Display Users -------------------------------------- */
+    function displayUsers() {
+      // Note: For a production app, ensure your Firebase Realtime Database rules
+      // secure this '/users' path appropriately (e.g., only allow admins to read).
+      const usersRef = db.ref('users');
+
+      usersRef.on('value', (snapshot) => {
+        loadingMessageEl.style.display = 'none';
+        userListEl.innerHTML = ''; // Clear previous list
+
+        if (!snapshot.exists()) {
+          userListEl.innerHTML = '<p>No users found in the database.</p>';
+          return;
+        }
+
+        snapshot.forEach((childSnapshot) => {
+          const uid = childSnapshot.key;
+          const userData = childSnapshot.val();
+
+          if (userData && userData.profile) {
+            const profile = userData.profile;
+            const name = profile.name || 'N/A';
+            const email = profile.email || 'N/A';
+            
+            // Using 'joined' timestamp from your initUser function
+            const joinedTimestamp = profile.joined;
+            let joinedDate = 'N/A';
+            if (joinedTimestamp) {
+              try {
+                joinedDate = new Date(joinedTimestamp).toLocaleString();
+              } catch (e) {
+                console.warn("Invalid date format for 'joined':", joinedTimestamp);
+                joinedDate = 'Invalid Date';
+              }
+            }
+
+            // Placeholder for a real last login time
+            // A real 'lastLogin' would ideally be updated on each login via Firebase Functions
+            // or client-side after successful authentication.
+            // Example: const lastLoginTimestamp = profile.lastLogin || joinedTimestamp;
+            // let lastLoginDate = 'N/A';
+            // if (lastLoginTimestamp) { /* ... format ... */ }
+
+            const userItem = document.createElement('li');
+            userItem.className = 'user-item';
+            userItem.innerHTML = `
+              <p><strong>User ID:</strong> <span>${uid}</span></p>
+              <p><strong>Name:</strong> <span>${name}</span></p>
+              <p><strong>Email:</strong> <span>${email}</span></p>
+              <p><strong>Provider:</strong> <span>${profile.provider || 'N/A'}</span></p>
+              <p><strong>Joined / First Login:</strong> <span>${joinedDate}</span></p>
+              <p class="note">
+                Note: A "True Last Login" would require updating a dedicated field
+                (e.g., 'profile.lastLogin') on each successful user sign-in.
+                Firebase Auth's 'metadata.lastSignInTime' is another source for this.
+              </p>
+            `;
+            userListEl.appendChild(userItem);
+          } else {
+            console.warn("User data or profile missing for UID:", uid, userData);
+          }
+        });
+
+        if (userListEl.children.length === 0) {
+             userListEl.innerHTML = '<p>No users with profile data found.</p>';
+        }
+
+      }, (error) => {
+        console.error("Error fetching users:", error);
+        loadingMessageEl.style.display = 'none';
+        errorMessageEl.textContent = `Error loading user data: ${error.message}`;
+        errorMessageEl.style.display = 'block';
+      });
+    }
+
+    // Check auth state (optional, but good for pages that might need protected access)
+    auth.onAuthStateChanged(user => {
+      // You could add logic here to only display the list if an admin is logged in
+      // For this example, we'll display it for anyone who can access the page
+      // if (user && user.isAdmin) { // Hypothetical isAdmin flag
+      //   displayUsers();
+      // } else if (user) {
+      //   errorMessageEl.textContent = "You do not have permission to view this page.";
+      //   errorMessageEl.style.display = 'block';
+      //   loadingMessageEl.style.display = 'none';
+      // } else {
+      //   errorMessageEl.textContent = "Please log in to view this page.";
+      //   // Potentially redirect to login: window.location.href = 'auth.html';
+      //   errorMessageEl.style.display = 'block';
+      //   loadingMessageEl.style.display = 'none';
+      // }
+      
+      // For simplicity, directly call displayUsers.
+      // REMEMBER: Secure your '/users' node in Firebase rules!
+      displayUsers();
+    });
+
+  </script>
+</body>
+</html>
